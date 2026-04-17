@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Тренажёр: Стороны уголовного процесса</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #fff;
+    padding: 16px;
+  }
+
+  .screen { width: 100%; max-width: 520px; display: none; }
+  .screen.active { display: flex; flex-direction: column; gap: 20px; }
+
+  /* ─── СТАРТ ─── */
+  .start-card {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 24px;
+    padding: 40px 32px;
+    text-align: center;
+  }
+  .start-card h1 { font-size: 1.5rem; margin-bottom: 12px; line-height: 1.3; }
+  .start-card p  { font-size: 0.95rem; color: rgba(255,255,255,0.65); margin-bottom: 28px; line-height: 1.5; }
+  .tag-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 28px; }
+  .tag {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+  .tag-red    { background: rgba(239,68,68,0.25);   border: 1px solid rgba(239,68,68,0.5);   color: #fca5a5; }
+  .tag-green  { background: rgba(34,197,94,0.25);   border: 1px solid rgba(34,197,94,0.5);   color: #86efac; }
+  .tag-amber  { background: rgba(245,158,11,0.25);  border: 1px solid rgba(245,158,11,0.5);  color: #fcd34d; }
+
+  /* ─── ГЛАВНАЯ КНОПКА ─── */
+  .btn-primary {
+    width: 100%;
+    padding: 16px;
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99,102,241,0.4); }
+  .btn-primary:active { transform: translateY(0); }
+
+  /* ─── ПРОГРЕСС ─── */
+  .progress-wrap { padding: 0 4px; }
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 8px;
+  }
+  .progress-bar-bg {
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    height: 8px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #3b82f6, #22c55e);
+    transition: width .4s ease;
+  }
+
+  /* ─── КАРТОЧКА ─── */
+  .card {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 24px;
+    padding: 36px 28px;
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color .25s, background .25s;
+  }
+  .card.correct { border-color: #22c55e; background: rgba(34,197,94,0.12); }
+  .card.wrong   { border-color: #ef4444; background: rgba(239,68,68,0.12); animation: shake .35s; }
+  .card-text { font-size: 1.1rem; font-weight: 600; line-height: 1.45; }
+
+  /* ─── СТРИК ─── */
+  .streak-row { display: flex; justify-content: center; gap: 8px; }
+  .dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    transition: background .2s;
+  }
+  .dot.filled { background: #22c55e; }
+
+  /* ─── КНОПКИ ОТВЕТА ─── */
+  .answer-col { display: flex; flex-direction: column; gap: 10px; }
+  .btn-answer {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 2px solid transparent;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .12s, box-shadow .12s;
+    text-align: center;
+  }
+  .btn-answer:active { transform: scale(.98); }
+  .btn-answer:disabled { opacity: .45; cursor: default; transform: none; box-shadow: none; }
+
+  .btn-red {
+    background: rgba(239,68,68,0.2);
+    border-color: rgba(239,68,68,0.5);
+    color: #fca5a5;
+  }
+  .btn-red:hover:not(:disabled) { background: rgba(239,68,68,0.35); border-color: #ef4444; box-shadow: 0 4px 16px rgba(239,68,68,0.3); }
+
+  .btn-green {
+    background: rgba(34,197,94,0.2);
+    border-color: rgba(34,197,94,0.5);
+    color: #86efac;
+  }
+  .btn-green:hover:not(:disabled) { background: rgba(34,197,94,0.35); border-color: #22c55e; box-shadow: 0 4px 16px rgba(34,197,94,0.3); }
+
+  .btn-amber {
+    background: rgba(245,158,11,0.2);
+    border-color: rgba(245,158,11,0.5);
+    color: #fcd34d;
+  }
+  .btn-amber:hover:not(:disabled) { background: rgba(245,158,11,0.35); border-color: #f59e0b; box-shadow: 0 4px 16px rgba(245,158,11,0.3); }
+
+  /* ─── ПОДСКАЗКА ─── */
+  .hint {
+    text-align: center;
+    font-size: 0.85rem;
+    min-height: 22px;
+    color: rgba(255,255,255,0.55);
+  }
+  .hint.show-correct { color: #86efac; }
+  .hint.show-wrong   { color: #fca5a5; }
+
+  /* ─── РЕЗУЛЬТАТ ─── */
+  .result-card {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 24px;
+    padding: 40px 32px;
+    text-align: center;
+  }
+  .result-card h2 { font-size: 1.4rem; margin-bottom: 12px; }
+  .result-phrase { font-size: 1rem; font-weight: 600; color: #fcd34d; margin-bottom: 8px; line-height: 1.4; }
+  .result-date { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-bottom: 28px; }
+
+  /* ─── АНИМАЦИИ ─── */
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .slide-in { animation: slideIn .25s ease; }
+</style>
+</head>
+<body>
+
+<!-- ══════════ СТАРТ ══════════ -->
+<div id="startScreen" class="screen active">
+  <div class="start-card">
+    <h1>Стороны уголовного процесса</h1>
+    <p>Определи, к какой категории относится каждый участник</p>
+    <div class="tag-row">
+      <span class="tag tag-red">Сторона обвинения</span>
+      <span class="tag tag-green">Сторона защиты</span>
+      <span class="tag tag-amber">Лица, способствующие процессу</span>
+    </div>
+    <p style="font-size:0.85rem; color:rgba(255,255,255,0.45);">21 понятие</p>
+  </div>
+  <button class="btn-primary" onclick="startQuiz()">Начать тренировку</button>
+</div>
+
+<!-- ══════════ КВИЗ ══════════ -->
+<div id="quizScreen" class="screen">
+  <div class="progress-wrap">
+    <div class="progress-meta">
+      <span id="progressText">Усвоено: 0 / 21</span>
+      <span id="remainText">Осталось: 21</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="card" id="card">
+    <div class="card-text" id="cardText">—</div>
+  </div>
+
+  <div class="streak-row" id="streakRow"></div>
+
+  <div class="answer-col">
+    <button class="btn-answer btn-red"    id="btnSO" onclick="answer('so')">Сторона обвинения</button>
+    <button class="btn-answer btn-green"  id="btnSZ" onclick="answer('sz')">Сторона защиты</button>
+    <button class="btn-answer btn-amber" id="btnLS" onclick="answer('ls')">Лица, способствующие процессу</button>
+  </div>
+
+  <div class="hint" id="hint"></div>
+</div>
+
+<!-- ══════════ РЕЗУЛЬТАТ ══════════ -->
+<div id="resultScreen" class="screen">
+  <div class="result-card">
+    <h2>Все понятия усвоены!</h2>
+    <div class="result-phrase" id="resultPhrase"></div>
+    <div class="result-date" id="resultDate"></div>
+    <button class="btn-primary" onclick="restart()">Пройти ещё раз</button>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'trainer_process_completions';
+
+const PHRASES = [
+  "Учителя теперь ссылаются на тебя!",
+  "Иди, покажи реальный ЕГЭ!",
+  "Дебаты с тобой теперь вне закона!",
+  "Одноклассники плачут от зависти!",
+  "Амба, иди отдыхай!",
+];
+
+const LABELS = {
+  so: "Сторона обвинения",
+  sz: "Сторона защиты",
+  ls: "Лица, способствующие процессу",
+};
+
+const ITEMS = [
+  // ── Сторона обвинения ──
+  { text: "Прокурор", type: "so" },
+  { text: "Следователь", type: "so" },
+  { text: "Орган дознания, дознаватель", type: "so" },
+  { text: "Потерпевший", type: "so" },
+  { text: "Частный обвинитель", type: "so" },
+  { text: "Гражданский истец", type: "so" },
+  { text: "Представитель потерпевшего", type: "so" },
+  { text: "Представитель частного обвинителя", type: "so" },
+  { text: "Представитель гражданского истца", type: "so" },
+
+  // ── Сторона защиты ──
+  { text: "Подозреваемый", type: "sz" },
+  { text: "Обвиняемый", type: "sz" },
+  { text: "Подсудимый", type: "sz" },
+  { text: "Законные представители несовершеннолетнего подозреваемого и обвиняемого", type: "sz" },
+  { text: "Защитник", type: "sz" },
+  { text: "Гражданский ответчик", type: "sz" },
+  { text: "Представитель гражданского ответчика", type: "sz" },
+
+  // ── Лица, способствующие проведению процесса ──
+  { text: "Свидетель", type: "ls" },
+  { text: "Эксперт", type: "ls" },
+  { text: "Специалист", type: "ls" },
+  { text: "Переводчик", type: "ls" },
+  { text: "Понятой", type: "ls" },
+];
+
+const TARGET_STREAK = 2;
+const REINSERT_AFTER = 3;
+const TOTAL = ITEMS.length;
+
+let deck = [];
+let current = null;
+let mastered = 0;
+let answered = false;
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function balancedShuffle(arr) {
+  const groups = {};
+  arr.forEach(item => {
+    if (!groups[item.type]) groups[item.type] = [];
+    groups[item.type].push({ ...item });
+  });
+  Object.values(groups).forEach(g => shuffle(g));
+
+  const result = [];
+  let last = null;
+  const keys = Object.keys(groups);
+
+  while (keys.some(k => groups[k].length > 0)) {
+    // Берём все доступные категории кроме последней
+    const available = keys.filter(k => groups[k].length > 0 && k !== last);
+    const pool = available.length > 0 ? available : keys.filter(k => groups[k].length > 0);
+    // Случайный выбор из доступных
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    result.push(groups[pick].shift());
+    last = pick;
+  }
+  return result;
+}
+
+function startQuiz() {
+  deck = balancedShuffle(ITEMS.map(item => ({ ...item, streak: 0 })));
+  mastered = 0;
+  showScreen('quizScreen');
+  nextCard();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function nextCard() {
+  if (deck.length === 0) { showResult(); return; }
+  current = deck[0];
+  answered = false;
+
+  const card = document.getElementById('card');
+  card.className = 'card slide-in';
+  document.getElementById('cardText').textContent = current.text;
+  ['btnSO', 'btnSZ', 'btnLS'].forEach(id => document.getElementById(id).disabled = false);
+  document.getElementById('hint').textContent = '';
+  document.getElementById('hint').className = 'hint';
+
+  updateProgress();
+  renderStreak();
+  setTimeout(() => card.classList.remove('slide-in'), 300);
+}
+
+function answer(chosen) {
+  if (answered) return;
+  answered = true;
+
+  ['btnSO', 'btnSZ', 'btnLS'].forEach(id => document.getElementById(id).disabled = true);
+
+  const correct = chosen === current.type;
+  const card = document.getElementById('card');
+  const hint = document.getElementById('hint');
+
+  if (correct) {
+    current.streak++;
+    card.classList.add('correct');
+    hint.textContent = '✓ Верно!';
+    hint.className = 'hint show-correct';
+
+    if (current.streak >= TARGET_STREAK) {
+      deck.shift();
+      mastered++;
+    } else {
+      deck.shift();
+      deck.splice(Math.min(REINSERT_AFTER, deck.length), 0, current);
+    }
+  } else {
+    current.streak = 0;
+    card.classList.add('wrong');
+    hint.textContent = `✗ Неверно — это: ${LABELS[current.type]}`;
+    hint.className = 'hint show-wrong';
+    deck.shift();
+    deck.splice(Math.min(REINSERT_AFTER, deck.length), 0, current);
+  }
+
+  updateProgress();
+  renderStreak();
+  setTimeout(nextCard, 1200);
+}
+
+function renderStreak() {
+  const row = document.getElementById('streakRow');
+  row.innerHTML = '';
+  for (let i = 0; i < TARGET_STREAK; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (current && i < current.streak ? ' filled' : '');
+    row.appendChild(dot);
+  }
+}
+
+function updateProgress() {
+  const pct = Math.round(mastered / TOTAL * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `Усвоено: ${mastered} / ${TOTAL}`;
+  document.getElementById('remainText').textContent = `Осталось: ${deck.length}`;
+}
+
+function showResult() {
+  const count = parseInt(localStorage.getItem(STORAGE_KEY) || '0');
+  document.getElementById('resultPhrase').textContent = PHRASES[count % PHRASES.length];
+  localStorage.setItem(STORAGE_KEY, count + 1);
+
+  const now = new Date();
+  document.getElementById('resultDate').textContent =
+    'Завершено: ' + now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  showScreen('resultScreen');
+}
+
+function restart() { startQuiz(); }
+</script>
+</body>
+</html>
