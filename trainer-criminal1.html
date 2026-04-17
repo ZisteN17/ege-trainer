@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Тренажёр: Уголовные наказания и меры</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #fff;
+    padding: 16px;
+  }
+
+  .screen { width: 100%; max-width: 520px; display: none; }
+  .screen.active { display: flex; flex-direction: column; gap: 20px; }
+
+  /* ─── СТАРТ ─── */
+  .start-card {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 24px;
+    padding: 40px 32px;
+    text-align: center;
+  }
+  .start-card h1 { font-size: 1.5rem; margin-bottom: 12px; line-height: 1.3; }
+  .start-card p  { font-size: 0.95rem; color: rgba(255,255,255,0.65); margin-bottom: 28px; line-height: 1.5; }
+  .tag-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 28px; }
+  .tag {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+  .tag-red    { background: rgba(239,68,68,0.25);   border: 1px solid rgba(239,68,68,0.5);   color: #fca5a5; }
+  .tag-blue   { background: rgba(59,130,246,0.25);  border: 1px solid rgba(59,130,246,0.5);  color: #93c5fd; }
+  .tag-amber  { background: rgba(245,158,11,0.25);  border: 1px solid rgba(245,158,11,0.5);  color: #fcd34d; }
+
+  /* ─── ГЛАВНАЯ КНОПКА ─── */
+  .btn-primary {
+    width: 100%;
+    padding: 16px;
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99,102,241,0.4); }
+  .btn-primary:active { transform: translateY(0); }
+
+  /* ─── ПРОГРЕСС ─── */
+  .progress-wrap { padding: 0 4px; }
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 8px;
+  }
+  .progress-bar-bg {
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    height: 8px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #3b82f6, #22c55e);
+    transition: width .4s ease;
+  }
+
+  /* ─── КАРТОЧКА ─── */
+  .card {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 24px;
+    padding: 36px 28px;
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color .25s, background .25s;
+  }
+  .card.correct { border-color: #22c55e; background: rgba(34,197,94,0.12); }
+  .card.wrong   { border-color: #ef4444; background: rgba(239,68,68,0.12); animation: shake .35s; }
+  .card-text { font-size: 1.1rem; font-weight: 600; line-height: 1.45; }
+
+  /* ─── СТРИК ─── */
+  .streak-row { display: flex; justify-content: center; gap: 8px; }
+  .dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    transition: background .2s;
+  }
+  .dot.filled { background: #22c55e; }
+
+  /* ─── КНОПКИ ОТВЕТА (3 штуки, вертикально) ─── */
+  .answer-col { display: flex; flex-direction: column; gap: 10px; }
+  .btn-answer {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 2px solid transparent;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .12s, box-shadow .12s;
+    text-align: center;
+  }
+  .btn-answer:active { transform: scale(.98); }
+  .btn-answer:disabled { opacity: .45; cursor: default; transform: none; box-shadow: none; }
+
+  .btn-red {
+    background: rgba(239,68,68,0.2);
+    border-color: rgba(239,68,68,0.5);
+    color: #fca5a5;
+  }
+  .btn-red:hover:not(:disabled) { background: rgba(239,68,68,0.35); border-color: #ef4444; box-shadow: 0 4px 16px rgba(239,68,68,0.3); }
+
+  .btn-blue {
+    background: rgba(59,130,246,0.2);
+    border-color: rgba(59,130,246,0.5);
+    color: #93c5fd;
+  }
+  .btn-blue:hover:not(:disabled) { background: rgba(59,130,246,0.35); border-color: #3b82f6; box-shadow: 0 4px 16px rgba(59,130,246,0.3); }
+
+  .btn-amber {
+    background: rgba(245,158,11,0.2);
+    border-color: rgba(245,158,11,0.5);
+    color: #fcd34d;
+  }
+  .btn-amber:hover:not(:disabled) { background: rgba(245,158,11,0.35); border-color: #f59e0b; box-shadow: 0 4px 16px rgba(245,158,11,0.3); }
+
+  /* ─── ПОДСКАЗКА ─── */
+  .hint {
+    text-align: center;
+    font-size: 0.85rem;
+    min-height: 22px;
+    color: rgba(255,255,255,0.55);
+  }
+  .hint.show-correct { color: #86efac; }
+  .hint.show-wrong   { color: #fca5a5; }
+
+  /* ─── РЕЗУЛЬТАТ ─── */
+  .result-card {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 24px;
+    padding: 40px 32px;
+    text-align: center;
+  }
+  .result-card h2 { font-size: 1.4rem; margin-bottom: 12px; }
+  .result-phrase {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fcd34d;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .result-date { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-bottom: 28px; }
+
+  /* ─── АНИМАЦИИ ─── */
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .slide-in { animation: slideIn .25s ease; }
+</style>
+</head>
+<body>
+
+<!-- ══════════ СТАРТ ══════════ -->
+<div id="startScreen" class="screen active">
+  <div class="start-card">
+    <h1>Уголовные наказания и меры</h1>
+    <p>Определи, к какой категории относится каждый пункт</p>
+    <div class="tag-row">
+      <span class="tag tag-red">Уголовное наказание</span>
+      <span class="tag tag-blue">Мера пресечения</span>
+      <span class="tag tag-amber">Иная мера принуждения</span>
+    </div>
+    <p style="font-size:0.85rem; color:rgba(255,255,255,0.45);">27 понятий</p>
+  </div>
+  <button class="btn-primary" onclick="startQuiz()">Начать тренировку</button>
+</div>
+
+<!-- ══════════ КВИЗ ══════════ -->
+<div id="quizScreen" class="screen">
+  <div class="progress-wrap">
+    <div class="progress-meta">
+      <span id="progressText">Усвоено: 0 / 27</span>
+      <span id="remainText">Осталось: 27</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="card" id="card">
+    <div class="card-text" id="cardText">—</div>
+  </div>
+
+  <div class="streak-row" id="streakRow"></div>
+
+  <div class="answer-col">
+    <button class="btn-answer btn-red"   id="btnUN"  onclick="answer('un')">Уголовное наказание</button>
+    <button class="btn-answer btn-blue"  id="btnMP"  onclick="answer('mp')">Мера пресечения</button>
+    <button class="btn-answer btn-amber" id="btnIMP" onclick="answer('imp')">Иная мера принуждения</button>
+  </div>
+
+  <div class="hint" id="hint"></div>
+</div>
+
+<!-- ══════════ РЕЗУЛЬТАТ ══════════ -->
+<div id="resultScreen" class="screen">
+  <div class="result-card">
+    <h2>Все понятия усвоены!</h2>
+    <div class="result-phrase" id="resultPhrase"></div>
+    <div class="result-date" id="resultDate"></div>
+    <button class="btn-primary" onclick="restart()">Пройти ещё раз</button>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'trainer_criminal_completions';
+
+const PHRASES = [
+  "Министр образования хочет твой автограф!",
+  "Ты сломал этот тренажёр!",
+  "Адвокат нервно курит в сторонке!",
+  "Поздравь, о великий знаток!",
+  "Судья встал, когда ты вошёл в кабинет!",
+];
+
+const LABELS = {
+  un:  "Уголовное наказание",
+  mp:  "Мера пресечения",
+  imp: "Иная мера принуждения",
+};
+
+const ITEMS = [
+  // ── Уголовные наказания ──
+  { text: "Штраф", type: "un" },
+  { text: "Лишение права занимать определённые должности или заниматься определённой деятельностью", type: "un" },
+  { text: "Лишение специального, воинского или почётного звания, классного чина и государственных наград", type: "un" },
+  { text: "Обязательные работы", type: "un" },
+  { text: "Исправительные работы", type: "un" },
+  { text: "Ограничение по военной службе", type: "un" },
+  { text: "Ограничение свободы", type: "un" },
+  { text: "Принудительные работы", type: "un" },
+  { text: "Арест", type: "un" },
+  { text: "Содержание в дисциплинарной воинской части", type: "un" },
+  { text: "Лишение свободы на определённый срок", type: "un" },
+  { text: "Пожизненное лишение свободы", type: "un" },
+  { text: "Смертная казнь", type: "un" },
+
+  // ── Меры пресечения ──
+  { text: "Подписка о невыезде", type: "mp" },
+  { text: "Личное поручительство", type: "mp" },
+  { text: "Наблюдение командования воинской части", type: "mp" },
+  { text: "Присмотр за несовершеннолетним обвиняемым", type: "mp" },
+  { text: "Запрет определённых действий", type: "mp" },
+  { text: "Залог", type: "mp" },
+  { text: "Домашний арест", type: "mp" },
+  { text: "Заключение под стражу", type: "mp" },
+
+  // ── Иные меры процессуального принуждения ──
+  { text: "Обязательство о явке", type: "imp" },
+  { text: "Привод", type: "imp" },
+  { text: "Временное отстранение от должности", type: "imp" },
+  { text: "Наложение ареста на имущество", type: "imp" },
+  { text: "Приостановление операций с денежными средствами", type: "imp" },
+  { text: "Денежное взыскание", type: "imp" },
+];
+
+const TARGET_STREAK = 2;
+const REINSERT_AFTER = 3;
+const TOTAL = ITEMS.length;
+
+let deck = [];
+let current = null;
+let mastered = 0;
+let answered = false;
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// Перемешивает так, чтобы карточки одной категории не шли подряд
+function balancedShuffle(arr) {
+  const groups = {};
+  arr.forEach(item => {
+    if (!groups[item.type]) groups[item.type] = [];
+    groups[item.type].push({ ...item });
+  });
+  Object.values(groups).forEach(g => shuffle(g));
+
+  const result = [];
+  let last = null;
+  const keys = Object.keys(groups);
+
+  while (keys.some(k => groups[k].length > 0)) {
+    // Берём категорию с наибольшим остатком, но не ту что была последней
+    const available = keys.filter(k => groups[k].length > 0 && k !== last);
+    const pick = available.length > 0
+      ? available.reduce((a, b) => groups[a].length >= groups[b].length ? a : b)
+      : keys.find(k => groups[k].length > 0);
+    result.push(groups[pick].shift());
+    last = pick;
+  }
+  return result;
+}
+
+function startQuiz() {
+  deck = balancedShuffle(ITEMS.map(item => ({ ...item, streak: 0 })));
+  mastered = 0;
+  showScreen('quizScreen');
+  nextCard();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function nextCard() {
+  if (deck.length === 0) { showResult(); return; }
+  current = deck[0];
+  answered = false;
+
+  const card = document.getElementById('card');
+  card.className = 'card slide-in';
+  document.getElementById('cardText').textContent = current.text;
+  ['btnUN', 'btnMP', 'btnIMP'].forEach(id => document.getElementById(id).disabled = false);
+  document.getElementById('hint').textContent = '';
+  document.getElementById('hint').className = 'hint';
+
+  updateProgress();
+  renderStreak();
+  setTimeout(() => card.classList.remove('slide-in'), 300);
+}
+
+function answer(chosen) {
+  if (answered) return;
+  answered = true;
+
+  ['btnUN', 'btnMP', 'btnIMP'].forEach(id => document.getElementById(id).disabled = true);
+
+  const correct = chosen === current.type;
+  const card = document.getElementById('card');
+  const hint = document.getElementById('hint');
+
+  if (correct) {
+    current.streak++;
+    card.classList.add('correct');
+    hint.textContent = '✓ Верно!';
+    hint.className = 'hint show-correct';
+
+    if (current.streak >= TARGET_STREAK) {
+      deck.shift();
+      mastered++;
+    } else {
+      deck.shift();
+      deck.splice(Math.min(REINSERT_AFTER, deck.length), 0, current);
+    }
+  } else {
+    current.streak = 0;
+    card.classList.add('wrong');
+    hint.textContent = `✗ Неверно — это: ${LABELS[current.type]}`;
+    hint.className = 'hint show-wrong';
+    deck.shift();
+    deck.splice(Math.min(REINSERT_AFTER, deck.length), 0, current);
+  }
+
+  updateProgress();
+  renderStreak();
+  setTimeout(nextCard, 1200);
+}
+
+function renderStreak() {
+  const row = document.getElementById('streakRow');
+  row.innerHTML = '';
+  for (let i = 0; i < TARGET_STREAK; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (current && i < current.streak ? ' filled' : '');
+    row.appendChild(dot);
+  }
+}
+
+function updateProgress() {
+  const pct = Math.round(mastered / TOTAL * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `Усвоено: ${mastered} / ${TOTAL}`;
+  document.getElementById('remainText').textContent = `Осталось: ${deck.length}`;
+}
+
+function showResult() {
+  const count = parseInt(localStorage.getItem(STORAGE_KEY) || '0');
+  document.getElementById('resultPhrase').textContent = PHRASES[count % PHRASES.length];
+  localStorage.setItem(STORAGE_KEY, count + 1);
+
+  const now = new Date();
+  document.getElementById('resultDate').textContent =
+    'Завершено: ' + now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  showScreen('resultScreen');
+}
+
+function restart() { startQuiz(); }
+</script>
+</body>
+</html>
