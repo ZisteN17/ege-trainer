@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Тренажёр: Права граждан РФ</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #fff;
+    padding: 16px;
+  }
+
+  .screen { width: 100%; max-width: 520px; display: none; }
+  .screen.active { display: flex; flex-direction: column; gap: 16px; }
+
+  /* ─── СТАРТ ─── */
+  .start-card {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 24px;
+    padding: 36px 28px;
+    text-align: center;
+  }
+  .start-card h1 { font-size: 1.4rem; margin-bottom: 10px; line-height: 1.3; }
+  .start-card p  { font-size: 0.9rem; color: rgba(255,255,255,0.65); margin-bottom: 20px; line-height: 1.5; }
+  .tag-row { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+  .tag {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .tag-blue   { background: rgba(59,130,246,0.25);  border: 1px solid rgba(59,130,246,0.5);  color: #93c5fd; }
+  .tag-red    { background: rgba(239,68,68,0.25);   border: 1px solid rgba(239,68,68,0.5);   color: #fca5a5; }
+  .tag-green  { background: rgba(34,197,94,0.25);   border: 1px solid rgba(34,197,94,0.5);   color: #86efac; }
+  .tag-amber  { background: rgba(245,158,11,0.25);  border: 1px solid rgba(245,158,11,0.5);  color: #fcd34d; }
+  .tag-purple { background: rgba(168,85,247,0.25);  border: 1px solid rgba(168,85,247,0.5);  color: #d8b4fe; }
+
+  /* ─── ГЛАВНАЯ КНОПКА ─── */
+  .btn-primary {
+    width: 100%;
+    padding: 15px;
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99,102,241,0.4); }
+  .btn-primary:active { transform: translateY(0); }
+
+  /* ─── ПРОГРЕСС ─── */
+  .progress-wrap { padding: 0 4px; }
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 6px;
+  }
+  .progress-bar-bg {
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    height: 7px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #3b82f6, #22c55e);
+    transition: width .4s ease;
+  }
+
+  /* ─── КАРТОЧКА ─── */
+  .card {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 24px;
+    padding: 28px 24px;
+    text-align: center;
+    min-height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color .25s, background .25s;
+  }
+  .card.correct { border-color: #22c55e; background: rgba(34,197,94,0.12); }
+  .card.wrong   { border-color: #ef4444; background: rgba(239,68,68,0.12); animation: shake .35s; }
+  .card-text { font-size: 1rem; font-weight: 600; line-height: 1.45; }
+
+  /* ─── СТРИК ─── */
+  .streak-row { display: flex; justify-content: center; gap: 8px; }
+  .dot {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    transition: background .2s;
+  }
+  .dot.filled { background: #22c55e; }
+
+  /* ─── КНОПКИ ОТВЕТА (5 штук вертикально) ─── */
+  .answer-col { display: flex; flex-direction: column; gap: 8px; }
+  .btn-answer {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .12s, box-shadow .12s;
+    text-align: center;
+  }
+  .btn-answer:active { transform: scale(.98); }
+  .btn-answer:disabled { opacity: .45; cursor: default; transform: none; box-shadow: none; }
+
+  .btn-blue {
+    background: rgba(59,130,246,0.2);
+    border-color: rgba(59,130,246,0.5);
+    color: #93c5fd;
+  }
+  .btn-blue:hover:not(:disabled) { background: rgba(59,130,246,0.35); border-color: #3b82f6; box-shadow: 0 4px 14px rgba(59,130,246,0.3); }
+
+  .btn-red {
+    background: rgba(239,68,68,0.2);
+    border-color: rgba(239,68,68,0.5);
+    color: #fca5a5;
+  }
+  .btn-red:hover:not(:disabled) { background: rgba(239,68,68,0.35); border-color: #ef4444; box-shadow: 0 4px 14px rgba(239,68,68,0.3); }
+
+  .btn-green {
+    background: rgba(34,197,94,0.2);
+    border-color: rgba(34,197,94,0.5);
+    color: #86efac;
+  }
+  .btn-green:hover:not(:disabled) { background: rgba(34,197,94,0.35); border-color: #22c55e; box-shadow: 0 4px 14px rgba(34,197,94,0.3); }
+
+  .btn-amber {
+    background: rgba(245,158,11,0.2);
+    border-color: rgba(245,158,11,0.5);
+    color: #fcd34d;
+  }
+  .btn-amber:hover:not(:disabled) { background: rgba(245,158,11,0.35); border-color: #f59e0b; box-shadow: 0 4px 14px rgba(245,158,11,0.3); }
+
+  .btn-purple {
+    background: rgba(168,85,247,0.2);
+    border-color: rgba(168,85,247,0.5);
+    color: #d8b4fe;
+  }
+  .btn-purple:hover:not(:disabled) { background: rgba(168,85,247,0.35); border-color: #a855f7; box-shadow: 0 4px 14px rgba(168,85,247,0.3); }
+
+  /* ─── ПОДСКАЗКА ─── */
+  .hint {
+    text-align: center;
+    font-size: 0.82rem;
+    min-height: 20px;
+    color: rgba(255,255,255,0.55);
+  }
+  .hint.show-correct { color: #86efac; }
+  .hint.show-wrong   { color: #fca5a5; }
+
+  /* ─── РЕЗУЛЬТАТ ─── */
+  .result-card {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 24px;
+    padding: 40px 32px;
+    text-align: center;
+  }
+  .result-card h2 { font-size: 1.4rem; margin-bottom: 12px; }
+  .result-phrase { font-size: 1rem; font-weight: 600; color: #fcd34d; margin-bottom: 8px; line-height: 1.4; }
+  .result-date { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-bottom: 28px; }
+
+  /* ─── АНИМАЦИИ ─── */
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .slide-in { animation: slideIn .25s ease; }
+</style>
+</head>
+<body>
+
+<!-- ══════════ СТАРТ ══════════ -->
+<div id="startScreen" class="screen active">
+  <div class="start-card">
+    <h1>Права граждан РФ</h1>
+    <p>Определи, к какой категории относится каждое право</p>
+    <div class="tag-row">
+      <span class="tag tag-blue">Личные</span>
+      <span class="tag tag-red">Политические</span>
+      <span class="tag tag-green">Социальные</span>
+      <span class="tag tag-amber">Экономические</span>
+      <span class="tag tag-purple">Культурные</span>
+    </div>
+    <p style="font-size:0.85rem; color:rgba(255,255,255,0.45);">35 понятий</p>
+  </div>
+  <button class="btn-primary" onclick="startQuiz()">Начать тренировку</button>
+</div>
+
+<!-- ══════════ КВИЗ ══════════ -->
+<div id="quizScreen" class="screen">
+  <div class="progress-wrap">
+    <div class="progress-meta">
+      <span id="progressText">Усвоено: 0 / 35</span>
+      <span id="remainText">Осталось: 35</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="card" id="card">
+    <div class="card-text" id="cardText">—</div>
+  </div>
+
+  <div class="streak-row" id="streakRow"></div>
+
+  <div class="answer-col">
+    <button class="btn-answer btn-blue"   id="btnLN" onclick="answer('ln')">Личные</button>
+    <button class="btn-answer btn-red"    id="btnPL" onclick="answer('pl')">Политические</button>
+    <button class="btn-answer btn-green"  id="btnSC" onclick="answer('sc')">Социальные</button>
+    <button class="btn-answer btn-amber"  id="btnEC" onclick="answer('ec')">Экономические</button>
+    <button class="btn-answer btn-purple" id="btnCU" onclick="answer('cu')">Культурные</button>
+  </div>
+
+  <div class="hint" id="hint"></div>
+</div>
+
+<!-- ══════════ РЕЗУЛЬТАТ ══════════ -->
+<div id="resultScreen" class="screen">
+  <div class="result-card">
+    <h2>Все понятия усвоены!</h2>
+    <div class="result-phrase" id="resultPhrase"></div>
+    <div class="result-date" id="resultDate"></div>
+    <button class="btn-primary" onclick="restart()">Пройти ещё раз</button>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'trainer_rights_completions';
+
+const PHRASES = [
+  "Истинный гражданин России!",
+  "Конституция теперь боится тебя!",
+  "Ошибки боятся твоего взгляда!",
+  "Закон подлости теперь работает на тебя!",
+  "Ты вынес этот тренажёр в нокауте!",
+];
+
+const LABELS = {
+  ln: "Личные",
+  pl: "Политические",
+  sc: "Социальные",
+  ec: "Экономические",
+  cu: "Культурные",
+};
+
+const BTN_IDS = ['btnLN', 'btnPL', 'btnSC', 'btnEC', 'btnCU'];
+
+const ITEMS = [
+  // ── Личные (гражданские) права ──
+  { text: "Право на жизнь", type: "ln" },
+  { text: "Право на свободу и личную неприкосновенность", type: "ln" },
+  { text: "Право на достоинство личности", type: "ln" },
+  { text: "Право на неприкосновенность жилища", type: "ln" },
+  { text: "Право на свободу передвижения и выбор места жительства", type: "ln" },
+  { text: "Право на свободу совести, свободу вероисповедания", type: "ln" },
+  { text: "Право на свободу мысли и слова", type: "ln" },
+  { text: "Право на защиту своих прав и свобод", type: "ln" },
+  { text: "Презумпция невиновности", type: "ln" },
+  { text: "Право на гражданство, в том числе гражданство иностранного государства", type: "ln" },
+  { text: "Право на равенство перед законом и судом", type: "ln" },
+  { text: "Право на получение квалифицированной юридической помощи", type: "ln" },
+  { text: "Право на тайну переписки, телефонных переговоров, почтовых и иных сообщений", type: "ln" },
+
+  // ── Политические права ──
+  { text: "Право собираться мирно, без оружия, проводить собрания, митинги и демонстрации, шествия и пикетирование", type: "pl" },
+  { text: "Право участвовать в управлении делами государства", type: "pl" },
+  { text: "Право избирать и быть избранными в органы государственной власти и местного самоуправления, участвовать в референдуме", type: "pl" },
+  { text: "Право на равный доступ к государственной службе", type: "pl" },
+  { text: "Право участвовать в отправлении правосудия", type: "pl" },
+  { text: "Право обращаться лично, а также направлять индивидуальные и коллективные обращения в государственные органы и органы местного самоуправления", type: "pl" },
+
+  // ── Социальные права ──
+  { text: "Право на защиту материнства и детства, семьи", type: "sc" },
+  { text: "Право на социальное обеспечение по возрасту, в случае болезни, инвалидности, потери кормильца", type: "sc" },
+  { text: "Право на жилище", type: "sc" },
+  { text: "Право на охрану здоровья и медицинскую помощь", type: "sc" },
+  { text: "Право на благоприятную окружающую среду, достоверную информацию о её состоянии", type: "sc" },
+  { text: "Право на образование", type: "sc" },
+
+  // ── Экономические права ──
+  { text: "Право на свободное использование своих способностей и имущества для предпринимательской деятельности", type: "ec" },
+  { text: "Право наследования", type: "ec" },
+  { text: "Право быть собственником", type: "ec" },
+  { text: "Право свободно распоряжаться своими способностями к труду, выбирать род деятельности и профессию", type: "ec" },
+  { text: "Право на отдых", type: "ec" },
+  { text: "Право на защиту от безработицы", type: "ec" },
+
+  // ── Культурные права ──
+  { text: "Право определять и указывать свою национальную принадлежность", type: "cu" },
+  { text: "Право на пользование родным языком, на свободный выбор языка обучения, воспитания и творчества", type: "cu" },
+  { text: "Свобода литературного, художественного, научного, технического и других видов творчества, преподавания", type: "cu" },
+  { text: "Право на участие в культурной жизни и пользование учреждениями культуры, на доступ к культурным ценностям", type: "cu" },
+];
+
+const TARGET_STREAK = 2;
+const TOTAL = ITEMS.length;
+
+let deck = [];
+let current = null;
+let mastered = 0;
+let answered = false;
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function balancedShuffle(arr) {
+  let result = [...arr];
+  shuffle(result);
+  shuffle(result);
+  shuffle(result);
+  return result;
+}
+
+function startQuiz() {
+  deck = balancedShuffle(ITEMS.map(item => ({ ...item, streak: 0 })));
+  mastered = 0;
+  showScreen('quizScreen');
+  nextCard();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function nextCard() {
+  if (deck.length === 0) { showResult(); return; }
+  current = deck[0];
+  answered = false;
+
+  const card = document.getElementById('card');
+  card.className = 'card slide-in';
+  document.getElementById('cardText').textContent = current.text;
+  BTN_IDS.forEach(id => document.getElementById(id).disabled = false);
+  document.getElementById('hint').textContent = '';
+  document.getElementById('hint').className = 'hint';
+
+  updateProgress();
+  renderStreak();
+  setTimeout(() => card.classList.remove('slide-in'), 300);
+}
+
+function answer(chosen) {
+  if (answered) return;
+  answered = true;
+
+  BTN_IDS.forEach(id => document.getElementById(id).disabled = true);
+
+  const correct = chosen === current.type;
+  const card = document.getElementById('card');
+  const hint = document.getElementById('hint');
+
+  if (correct) {
+    current.streak++;
+    card.classList.add('correct');
+    hint.textContent = '✓ Верно!';
+    hint.className = 'hint show-correct';
+
+    if (current.streak >= TARGET_STREAK) {
+      deck.shift();
+      mastered++;
+    } else {
+      deck.shift();
+      const pos = 2 + Math.floor(Math.random() * 3);
+      deck.splice(Math.min(pos, deck.length), 0, current);
+    }
+  } else {
+    current.streak = 0;
+    card.classList.add('wrong');
+    hint.textContent = `✗ Неверно — это: ${LABELS[current.type]}`;
+    hint.className = 'hint show-wrong';
+    deck.shift();
+    const pos = 2 + Math.floor(Math.random() * 4);
+    deck.splice(Math.min(pos, deck.length), 0, current);
+  }
+
+  updateProgress();
+  renderStreak();
+  setTimeout(nextCard, 1200);
+}
+
+function renderStreak() {
+  const row = document.getElementById('streakRow');
+  row.innerHTML = '';
+  for (let i = 0; i < TARGET_STREAK; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (current && i < current.streak ? ' filled' : '');
+    row.appendChild(dot);
+  }
+}
+
+function updateProgress() {
+  const pct = Math.round(mastered / TOTAL * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `Усвоено: ${mastered} / ${TOTAL}`;
+  document.getElementById('remainText').textContent = `Осталось: ${deck.length}`;
+}
+
+function showResult() {
+  const count = parseInt(localStorage.getItem(STORAGE_KEY) || '0');
+  document.getElementById('resultPhrase').textContent = PHRASES[count % PHRASES.length];
+  localStorage.setItem(STORAGE_KEY, count + 1);
+
+  const now = new Date();
+  document.getElementById('resultDate').textContent =
+    'Завершено: ' + now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  showScreen('resultScreen');
+}
+
+function restart() { startQuiz(); }
+</script>
+</body>
+</html>
